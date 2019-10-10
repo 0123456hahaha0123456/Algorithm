@@ -4,7 +4,7 @@ int arr[300010];
 void qsort(int l,int r)
 {
     srand(time(NULL));
-    int key = arr[l + rand() % (r-l+1)];
+    int key = arr[l + rand() % (r-l+1)]; // it makes sense. If you use l + (r-l)/2, maybe run out of time
     int i = l, j = r;
     while(i <= j)
     {
