@@ -1,3 +1,5 @@
+// Use for find 2 number, which has XOR minimum in array
+
 #include<iostream>
 #include<algorithm>
 #include<cmath>
