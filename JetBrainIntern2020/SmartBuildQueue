@@ -1,0 +1,140 @@
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.math.max
+import kotlin.random.Random
+import kotlin.random.nextInt
+var totalRecursiveRes = 0F
+var MAXSIZE = 4*100010
+var tree = FloatArray(MAXSIZE)
+
+fun input() : ArrayList<Train>{
+    val  sc = Scanner(System.`in`)
+    val arrTrain = ArrayList<Train>()
+
+    val n = sc.nextInt()
+    for(i in 0 until n){
+        val index = sc.nextInt()
+        val arrivalTime = sc.nextInt()
+        val unloadTime = sc.nextInt()
+        val money = sc.nextFloat()
+        arrTrain.add(Train(index,arrivalTime,unloadTime,arrivalTime+unloadTime,money))
+    }
+    return arrTrain
+}
+
+
+fun discreteTimeList(arrTrain : ArrayList<Train>) : MutableList<Train>{
+    var setTrainTime = mutableSetOf(arrTrain.size*2+1)
+    arrTrain.forEach {
+        setTrainTime.add(it.arrivalTime)
+        setTrainTime.add(it.finishTime)
+    }
+    val sortedSetTrainTime = setTrainTime.sorted()
+    var newArrayTrainList = arrTrain.sortedWith(compareBy { it.arrivalTime }).toMutableList()
+    newArrayTrainList.forEach {
+        it.arrivalTime = sortedSetTrainTime.indexOf(it.arrivalTime)+1
+        it.finishTime = sortedSetTrainTime.indexOf(it.finishTime)+1
+    }
+    return newArrayTrainList
+}
+
+/**
+ * Time complexity : N^2
+ */
+fun dynamicSolve(arrTrain : ArrayList<Train>) : Float{
+    val sortedAndDiscretedTrains = discreteTimeList(arrTrain)
+    val n = sortedAndDiscretedTrains.size
+    val k = sortedAndDiscretedTrains.maxBy { it.finishTime }!!.finishTime
+
+    val F = Array(n+1) {FloatArray(k+1) {0F} }
+    for(i in 1..n){
+        for(j in 1..k) {
+            F[i][j] = max(F[i-1][j],F[i][j-1])
+            if (j==sortedAndDiscretedTrains[i-1].finishTime) F[i][j] = max(F[i][j],F[i-1][sortedAndDiscretedTrains[i-1].arrivalTime]+sortedAndDiscretedTrains[i-1].money)
+
+          //  if (j!=sortedAndDiscretedTrains[i-1].finishTime) F[i][j] = max(F[i-1][j],F[i][j-1])
+           // else F[i][j] = max(max(F[i-1][sortedAndDiscretedTrains[i-1].arrivalTime]+sortedAndDiscretedTrains[i-1].money,F[i-1][j]),F[i][j-1])
+        }
+    }
+//    println("dynamicSolve = ${F[n][k]}")
+    return F[n][k]
+}
+
+
+/**
+ * Time complexity : N^2
+ */
+fun greedyAlgorithm(arrTrain : ArrayList<Train>) : Float{
+    val sortedArrayTrain = arrTrain.sortedWith( compareBy { it.arrivalTime }).toList()
+    val n = sortedArrayTrain.size
+
+
+    var arr = IntArray(n)
+    recursive(0,n,arr,sortedArrayTrain as ArrayList<Train>)
+    println("recursiveRes = $totalRecursiveRes")
+
+    val result = FloatArray(n)
+    var dapan = 0F
+    for(i in 0 until n){
+        var tmpMax = 0F
+        for(j in 0 until i){
+            if (sortedArrayTrain[j].finishTime <= sortedArrayTrain[i].arrivalTime) tmpMax = max(tmpMax,result[j])
+        }
+        result[i] = tmpMax + sortedArrayTrain[i].money
+        dapan = max(dapan,result[i])
+    }
+   // println("greedyRes = $dapan")
+    return dapan
+}
+
+/**
+ *Time complexity : 2^n
+*/
+fun recursive(index : Int, n : Int, arr : IntArray, sortedArrayTrain : ArrayList<Train>){
+    if (index == n) {
+        var tmpRes = 0F
+        var last = 0
+        for(i in 0 until arr.size){
+            if (arr[i]==0) continue
+            if (sortedArrayTrain[i].arrivalTime < last) return
+            tmpRes += sortedArrayTrain[i].money
+            last = sortedArrayTrain[i].finishTime
+        }
+        totalRecursiveRes = max(tmpRes,totalRecursiveRes)
+        return
+    }
+    for(i in 0 until 2){
+        arr[index] = i
+        recursive(index+1,n,arr,sortedArrayTrain)
+    }
+}
+
+fun makeTest( n : Int): ArrayList<Train>{
+    var tmp = ArrayList<Train>()
+    for(i in 0 until n){
+        val begin = Random.nextInt(1..100)
+        val duration = Random.nextInt(1..10)
+        val tempTrain = Train(i,begin,duration ,begin+duration,Random.nextFloat()*100)
+        tmp.add(tempTrain)
+    }
+    return tmp
+}
+fun main(){
+    //val arrTrain = input()
+    for(i in 0..9) {
+        println(i)
+        totalRecursiveRes = 0F
+        val arrTrain = makeTest(20)
+        val res = greedyAlgorithm(arrTrain)
+        if (res == dynamicSolve(arrTrain) ) println("SUCCESS")
+        else {
+            println(res)
+            println("Dynamic = ${dynamicSolve(arrTrain)}")
+            arrTrain.forEach{println(it)}
+        }
+
+    }
+}
+
+
+data class Train(var index: Int, var arrivalTime : Int, var unloadTime : Int, var finishTime : Int,  var money : Float)
